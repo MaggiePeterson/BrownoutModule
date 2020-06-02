@@ -20,3 +20,4 @@
 #define ErrorModuleRunInterval 80 
 #define DriveBaseModuleRunInterval 20 
 #define ControllerModuleRunInterval 35
+#define BrownoutModuleRunInterval 20

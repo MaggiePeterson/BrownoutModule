@@ -8,12 +8,15 @@
 #include "ModuleBase.h"
 #include "GenericPipe.h"
 
+#include <frc/PowerDistributionPanel.h>
+
 
 class BrownoutModule : public ModuleBase {
  
   GenericPipe* ErrorModulePipe;
-  GenericPipe* BrownoutModulePipe;
-  GenericPipe* AutonomousModulePipe;
+  GenericPipe* DriveBaseModulePipe;
+  frc::PowerDistributionPanel* pdp;
+
 
   public:
 
