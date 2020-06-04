@@ -8,12 +8,28 @@ void BrownoutModule::periodicInit(){
     this->ErrorModulePipe = pipes[0];
 	this->DriveBaseModulePipe = pipes[1];
 }
+
+void BrownoutModule::writeData(std::string fileName){
+
+    std::ofstream myFile;
+    myFile.open (fileName);
+    myFile <<  frc::Timer().GetFPGATimestamp() << pdp->GetTotalCurrent() << pdp->GetVoltage() << std::endl;
+    myFile.close();
+}
+
 void BrownoutModule::periodicRoutine(){
 
      if (!errors.empty()) { // Handle internal ModuleBase Errors
         ErrorModulePipe->pushQueue(errors.front());
         errors.pop();
     }
+
+    writeData(fileName);
+
+}
+
+double BrownoutModule::getBatteryPower(){
+    return pdp->GetTotalCurrent() * pdp->GetVoltage();
 }
 
 std::vector<uint8_t> BrownoutModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, DriveBaseModuleID}; }
