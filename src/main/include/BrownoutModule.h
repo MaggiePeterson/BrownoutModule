@@ -13,6 +13,7 @@
 
 #include <frc/Timer.h>
 #include <frc/PowerDistributionPanel.h>
+#include <frc/DriverStation.h>
 
 
 class BrownoutModule : public ModuleBase {
@@ -20,10 +21,14 @@ class BrownoutModule : public ModuleBase {
   GenericPipe* ErrorModulePipe;
   GenericPipe* DriveBaseModulePipe;
   frc::PowerDistributionPanel* pdp;
+  const double BATTERY_RESISTANCE = 0.02;
+  const double VOLTAGE_THRESHOLD = 7.0;
 
   void writeData(std::string fileName);
   const std::string fileName = "/";
   double getBatteryPower();
+  double getMaxCurrentDraw();
+  bool isBrownout();
 
 
   public:

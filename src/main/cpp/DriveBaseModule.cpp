@@ -104,4 +104,15 @@ void DriveBaseModule::periodicRoutine() {
 	// Add rest of manipulator code...
 }
 
+double DriveBaseModule::getDriveVoltage(){
+  
+  double rMotorV = rMotor->GetAppliedOutput() * rMotor->GetBusVoltage(); 
+  double lMotorV = lMotor->GetAppliedOutput() * lMotor->GetBusVoltage(); 
+  double rMotorFV = rMotorFollower->GetAppliedOutput() * rMotorFollower->GetBusVoltage(); 
+  double lMotorFV = lMotorFollower->GetAppliedOutput() * lMotorFollower->GetBusVoltage();
+
+  double totalDriveVoltage = rMotorV + lMotorV + rMotorFV + lMotorFV;
+  return totalDriveVoltage; 
+}
+
 std::vector<uint8_t> DriveBaseModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID}; }
