@@ -29,6 +29,7 @@ class BrownoutModule : public ModuleBase {
   double getBatteryPower();
   double getMaxCurrentDraw();
   bool isBrownout();
+  double getBatteryResistance();
 
 
   public:

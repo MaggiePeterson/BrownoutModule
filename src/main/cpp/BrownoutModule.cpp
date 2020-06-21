@@ -16,7 +16,6 @@ void BrownoutModule::writeData(std::string fileName){
     myFile <<  frc::Timer().GetFPGATimestamp() << pdp->GetTotalCurrent() << pdp->GetVoltage() << getBatteryPower() << std::endl;
     myFile.close();
 
-    frc::DriverStation::GetInstance()
 }
 
 void BrownoutModule::periodicRoutine(){
@@ -31,15 +30,22 @@ void BrownoutModule::periodicRoutine(){
 }
 
 double BrownoutModule::getBatteryPower(){
-    return frc::DriverStation::GetInstance().GetBatteryVoltage() * frc::DriverStation::GetInstance().GetBatteryVoltage() / BATTERY_RESISTANCE; 
+    return frc::DriverStation::GetInstance().GetBatteryVoltage() * frc::DriverStation::GetInstance().GetBatteryVoltage() / getBatteryResistance(); 
 }
 
 double BrownoutModule::getMaxCurrentDraw(){
     // max current draw with > 7V in battery
 
+    // calc find total resistance and calculate amp at which V is 7,  
     return getBatteryPower()/VOLTAGE_THRESHOLD; 
 
 }
+
+double BrownoutModule::getBatteryResistance(){
+
+    return frc::DriverStation::GetInstance().GetBatteryVoltage()/ pdp->GetTotalCurrent();
+}
+
 
 bool BrownoutModule::isBrownout(){
     
