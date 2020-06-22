@@ -114,5 +114,6 @@ double DriveBaseModule::getDriveVoltage(){
   double totalDriveVoltage = rMotorV + lMotorV + rMotorFV + lMotorFV;
   return totalDriveVoltage; 
 }
+ 
 
-std::vector<uint8_t> DriveBaseModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID}; }
+std::vector<uint8_t> DriveBaseModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, BrownoutModuleID}; }
