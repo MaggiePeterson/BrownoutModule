@@ -16,11 +16,14 @@
 #include <frc/DriverStation.h>
 
 #define VOLTAGE_THRESHOLD 7.0
+
 class BrownoutModule : public ModuleBase {
  
   GenericPipe* ErrorModulePipe;
   GenericPipe* DriveBaseModulePipe;
   frc::PowerDistributionPanel* pdp;
+  double batteryResistance = 0.0;
+  bool hasRun = false;
 
   void writeData(std::string fileName);
   const std::string fileName = "/";
@@ -28,6 +31,7 @@ class BrownoutModule : public ModuleBase {
   double getMaxCurrentDraw();
   bool isBrownout();
   double getBatteryResistance();
+  void calculateBatteryResistance();
 
 
   public:

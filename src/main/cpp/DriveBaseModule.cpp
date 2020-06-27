@@ -21,6 +21,14 @@ bool DriveBaseModule::setDriveCurrLimit(float iPeak, float iRated, int limitCycl
   return setlFront && setrFront && setlBack && setrBack; // Failure on false
 }
 
+bool DriveBaseModule::setMotorSetpoints(double lVal, double rVal) {
+	lMotor->GetEncoder().SetPosition(0);
+	rMotor->GetEncoder().SetPosition(0);
+	lMotor->GetPIDController().SetReference(lVal, rev::ControlType::kPosition);
+	rMotor->GetPIDController().SetReference(rVal, rev::ControlType::kPosition);
+	return rMotor->GetLastError() == rev::CANError::kOk && lMotor->GetLastError() == rev::CANError::kOk;
+}
+
 void DriveBaseModule::arcadeDrive(float vel, float dir) {
   // Convert joystick input into motor outputs in voltage mode
 
@@ -101,6 +109,20 @@ void DriveBaseModule::periodicRoutine() {
     arcadeDrive(driverStick->GetRawAxis(1), driverStick->GetRawAxis(4));
     return;
   }
+
+  if (stateRef->IsTest()) {
+    
+		Message* msg;
+    //get latest packet
+    while( BrownoutModulePipe->size() > 0 )
+            msg = BrownoutModulePipe->popQueue();
+		if (!msg) return;
+
+    ErrorModulePipe->pushQueue(new Message("Forward Move", INFO));
+		ErrorModulePipe->pushQueue(new Message("Value: " + std::to_string(msg->val), INFO));
+		if (!setMotorSetpoints(msg->val, msg->val)) ErrorModulePipe->pushQueue(new Message("Failed to do test brownout motion!", HIGH));
+    return;
+	}
 	// Add rest of manipulator code...
 }
 

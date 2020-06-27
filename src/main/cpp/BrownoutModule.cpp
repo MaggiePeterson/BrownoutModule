@@ -16,6 +16,10 @@ void BrownoutModule::periodicRoutine(){
         errors.pop();
     }
 
+    if(stateRef->IsTest() && !hasRun){
+        calculateBatteryResistance();
+    }
+
     if(stateRef->IsDisabled()) return;
 
     if(isBrownout()){
@@ -23,7 +27,6 @@ void BrownoutModule::periodicRoutine(){
     }
 
     writeData(fileName);
-
 }
 
 void BrownoutModule::writeData(std::string fileName){
@@ -54,11 +57,30 @@ double BrownoutModule::getMaxCurrentDraw(){
 
 double BrownoutModule::getBatteryResistance(){
 
-    //does I need to be current at the battery or total current?
-    //voltage should be voltage drops
-    return frc::DriverStation::GetInstance().GetBatteryVoltage()/ pdp->GetTotalCurrent();
+    return batteryResistance;
 }
 
+void BrownoutModule::calculateBatteryResistance(){
+
+    std::vector<double> currentData;
+    std::vector<double> voltageData;
+
+    double moveSetpoint = 10;
+
+    DriveBaseModulePipe->pushQueue(new Message("", moveSetpoint));
+
+    double startTime = frc::Timer().GetFPGATimestamp();
+    double TIME_OUT = 1000;
+
+    while (frc::Timer().GetFPGATimestamp() - startTime < TIME_OUT){
+        currentData.push_back(pdp->GetTotalCurrent());
+        voltageData.push_back(pdp->GetVoltage());
+
+    }
+
+
+
+}
 
 bool BrownoutModule::isBrownout(){
     
