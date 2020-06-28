@@ -75,12 +75,32 @@ void BrownoutModule::calculateBatteryResistance(){
     while (frc::Timer().GetFPGATimestamp() - startTime < TIME_OUT){
         currentData.push_back(pdp->GetTotalCurrent());
         voltageData.push_back(pdp->GetVoltage());
-
     }
 
-
+    batteryResistance = getLineOfBestFitSlope(currentData, voltageData);
 
 }
+
+double BrownoutModule::getLineOfBestFitSlope(std::vector<double> xData, std::vector<double> yData){
+
+    if(xData.size() != yData.size())
+        ErrorModulePipe->pushQueue(new Message("Could not calculate battery resistance!", FATAL));
+
+   double n = xData.size();
+   double xsum = 0.0, x2sum = 0.0, ysum = 0.0, xysum = 0.0; //variables for sums/sigma of xi,yi,xi^2,xiyi etc
+
+   for (int i = 0; i < n; i++)
+   {
+      xsum += xData[i];                        //calculate sigma(xi)
+      ysum += yData[i];                       //calculate sigma(yi)
+      x2sum += pow(xData[i],2);                //calculate sigma(x^2i)
+      xysum += xData[i] * xData[i];                    //calculate sigma(xi*yi)
+   }
+
+   double slope = (n*xysum - xsum*ysum)/(n*x2sum - xsum*xsum);            //calculate slope
+   return slope;
+}
+
 
 bool BrownoutModule::isBrownout(){
     

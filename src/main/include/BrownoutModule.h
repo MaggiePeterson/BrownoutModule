@@ -32,6 +32,7 @@ class BrownoutModule : public ModuleBase {
   bool isBrownout();
   double getBatteryResistance();
   void calculateBatteryResistance();
+  double getLineOfBestFitSlope(std::vector<double> xData, std::vector<double>yData);
 
 
   public:
