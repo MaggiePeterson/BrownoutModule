@@ -118,9 +118,10 @@ void DriveBaseModule::periodicRoutine() {
             msg = BrownoutModulePipe->popQueue();
 		if (!msg) return;
 
-    ErrorModulePipe->pushQueue(new Message("Forward Move", INFO));
+    BrownoutModulePipe->pushQueue(new Message("Forward Move", INFO));
 		ErrorModulePipe->pushQueue(new Message("Value: " + std::to_string(msg->val), INFO));
-		if (!setMotorSetpoints(msg->val, msg->val)) ErrorModulePipe->pushQueue(new Message("Failed to do test brownout motion!", HIGH));
+
+		if (!setMotorSetpoints(msg->val, msg->val)) BrownoutModulePipe->pushQueue(new Message("Failed to do test brownout motion!", HIGH));
     return;
 	}
 	// Add rest of manipulator code...

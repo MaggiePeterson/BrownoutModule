@@ -72,9 +72,19 @@ void BrownoutModule::calculateBatteryResistance(){
     double startTime = frc::Timer().GetFPGATimestamp();
     double TIME_OUT = 1000;
 
-    while (frc::Timer().GetFPGATimestamp() - startTime < TIME_OUT){
-        currentData.push_back(pdp->GetTotalCurrent());
-        voltageData.push_back(pdp->GetVoltage());
+
+    if(DriveBaseModulePipe->popQueue()->val == HIGH){
+
+        ErrorModulePipe->pushQueue(new Message("Failed to set motors for Brownout Module", HIGH));
+    }
+    else {
+
+        //if motors set, college voltage and current
+        while (frc::Timer().GetFPGATimestamp() - startTime < TIME_OUT){
+            currentData.push_back(pdp->GetTotalCurrent());
+            voltageData.push_back(pdp->GetVoltage());
+        }
+
     }
 
     batteryResistance = getLineOfBestFitSlope(currentData, voltageData);
@@ -109,10 +119,5 @@ bool BrownoutModule::isBrownout(){
     return potentialVoltDrop < VOLTAGE_THRESHOLD;
 }
 
-/* calc watt hours
-
-voltage provides * current can provide for time
-
-*/ 
 
 std::vector<uint8_t> BrownoutModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, DriveBaseModuleID}; }
