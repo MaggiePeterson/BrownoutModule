@@ -27,18 +27,25 @@ void BrownoutModule::periodicRoutine(){
         ErrorModulePipe->pushQueue(new Message("Brownout will occur!", FATAL));
     }
 
-    writeData(fileName);
+    if(!(writeData(fileName))){
+        ErrorModulePipe->pushQueue(new Message("Failed to write Brownout data to file", LOW));
+    }
 }
 
 /* writes data to csv file */
-void BrownoutModule::writeData(std::string fileName){
+bool BrownoutModule::writeData(std::string fileName){
 
     std::ofstream myFile;
     myFile.open (fileName);
+    
     if (myFile <<  frc::Timer().GetFPGATimestamp() << pdp->GetTotalCurrent() << pdp->GetVoltage() << getBatteryPower() << std::endl){
+        
         myFile.close();
-        //return true;
+        return true;
     }
+    myFile.close();
+    return false;
+    
     
 
 }
@@ -69,17 +76,19 @@ void BrownoutModule::calculateBatteryResistance(){
 
     DriveBaseModulePipe->pushQueue(new Message("", moveSetpoint));
 
-    double startTime = frc::Timer().GetFPGATimestamp();
-    double TIME_OUT = 1000;
+    double startTime; 
+    double TIME_OUT; 
 
-
-    if(DriveBaseModulePipe->popQueue()->val == HIGH){
+    if(DriveBaseModulePipe->popQueue()->val == HIGH){ 
 
         ErrorModulePipe->pushQueue(new Message("Failed to set motors for Brownout Module", HIGH));
     }
     else {
 
-        //if motors set, college voltage and current
+        startTime = frc::Timer().GetFPGATimestamp();
+        TIME_OUT = 1000;
+
+        //if motors set, collect voltage and current
         while (frc::Timer().GetFPGATimestamp() - startTime < TIME_OUT){
             currentData.push_back(pdp->GetTotalCurrent());
             voltageData.push_back(pdp->GetVoltage());

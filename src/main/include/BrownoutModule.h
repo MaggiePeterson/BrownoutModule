@@ -25,7 +25,7 @@ class BrownoutModule : public ModuleBase {
   double batteryResistance = 0.0;
   bool hasRun = false;
 
-  void writeData(std::string fileName);
+  bool writeData(std::string fileName);
   const std::string fileName = "/";
   double getBatteryPower();
   double getMaxCurrentDraw();
