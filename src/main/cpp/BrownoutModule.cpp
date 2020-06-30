@@ -16,11 +16,12 @@ void BrownoutModule::periodicRoutine(){
         errors.pop();
     }
 
+    if(stateRef->IsDisabled()) return;
+
     if(stateRef->IsTest() && !hasRun){
         calculateBatteryResistance();
+        hasRun = true;
     }
-
-    if(stateRef->IsDisabled()) return;
 
     if(isBrownout()){
         ErrorModulePipe->pushQueue(new Message("Brownout will occur!", FATAL));
@@ -29,29 +30,27 @@ void BrownoutModule::periodicRoutine(){
     writeData(fileName);
 }
 
+/* writes data to csv file */
 void BrownoutModule::writeData(std::string fileName){
 
     std::ofstream myFile;
     myFile.open (fileName);
-    myFile <<  frc::Timer().GetFPGATimestamp() << pdp->GetTotalCurrent() << pdp->GetVoltage() << getBatteryPower() << std::endl;
-    myFile.close();
+    if (myFile <<  frc::Timer().GetFPGATimestamp() << pdp->GetTotalCurrent() << pdp->GetVoltage() << getBatteryPower() << std::endl){
+        myFile.close();
+        //return true;
+    }
+    
 
 }
 
+/* gets battery power */
 double BrownoutModule::getBatteryPower(){
     return frc::DriverStation::GetInstance().GetBatteryVoltage() * frc::DriverStation::GetInstance().GetBatteryVoltage() / getBatteryResistance(); 
 }
 
 double BrownoutModule::getMaxCurrentDraw(){
-    // max current draw with > 7V in battery
-
-    /* you'd need to find the net resistance of the total system i think
- then calculate the amperage at which the voltage is at 7V
- subtract that from the batteries capacity
- and then given a specific time limit you can calculate the rate of discharge
-
-*/
-    return getBatteryPower()/VOLTAGE_THRESHOLD; 
+    
+    return 0; 
 
 }
 
@@ -60,6 +59,7 @@ double BrownoutModule::getBatteryResistance(){
     return batteryResistance;
 }
 
+/* applies load to drivetrain then measures voltage and current */
 void BrownoutModule::calculateBatteryResistance(){
 
     std::vector<double> currentData;
@@ -81,6 +81,7 @@ void BrownoutModule::calculateBatteryResistance(){
 
 }
 
+/* uses least squares to find the slope of the line of best fit */
 double BrownoutModule::getLineOfBestFitSlope(std::vector<double> xData, std::vector<double> yData){
 
     if(xData.size() != yData.size())
@@ -101,11 +102,17 @@ double BrownoutModule::getLineOfBestFitSlope(std::vector<double> xData, std::vec
    return slope;
 }
 
-
+/* checks if current draw will drop voltage below 7V */
 bool BrownoutModule::isBrownout(){
     
     double potentialVoltDrop = frc::DriverStation::GetInstance().GetBatteryVoltage() - getBatteryResistance()*pdp->GetTotalCurrent();
     return potentialVoltDrop < VOLTAGE_THRESHOLD;
 }
+
+/* calc watt hours
+
+voltage provides * current can provide for time
+
+*/ 
 
 std::vector<uint8_t> BrownoutModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, DriveBaseModuleID}; }
