@@ -38,7 +38,7 @@ bool BrownoutModule::writeData(std::string fileName){
     std::ofstream myFile;
     myFile.open (fileName);
     
-    if (myFile <<  frc::Timer().GetFPGATimestamp() << pdp->GetTotalCurrent() << pdp->GetVoltage() << getBatteryPower() << std::endl){
+    if (myFile <<  frc::Timer().GetFPGATimestamp() << ", " << pdp->GetTotalCurrent() << ", "<< pdp->GetVoltage() << ", " << getBatteryPower() << ", " << std::endl){
         
         myFile.close();
         return true;
