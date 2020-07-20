@@ -21,11 +21,11 @@ bool DriveBaseModule::setDriveCurrLimit(float iPeak, float iRated, int limitCycl
   return setlFront && setrFront && setlBack && setrBack; // Failure on false
 }
 
-bool DriveBaseModule::setMotorSetpoints(double lVal, double rVal) {
+bool DriveBaseModule::setMotorSetpoints(double lVal, double rVal, rev::ControlType controlMode) {
 	lMotor->GetEncoder().SetPosition(0);
 	rMotor->GetEncoder().SetPosition(0);
-	lMotor->GetPIDController().SetReference(lVal, rev::ControlType::kPosition);
-	rMotor->GetPIDController().SetReference(rVal, rev::ControlType::kPosition);
+	lMotor->GetPIDController().SetReference(lVal, controlMode);
+	rMotor->GetPIDController().SetReference(rVal, controlMode);
 	return rMotor->GetLastError() == rev::CANError::kOk && lMotor->GetLastError() == rev::CANError::kOk;
 }
 
@@ -121,7 +121,8 @@ void DriveBaseModule::periodicRoutine() {
     BrownoutModulePipe->pushQueue(new Message("Forward Move", INFO));
 		ErrorModulePipe->pushQueue(new Message("Value: " + std::to_string(msg->val), INFO));
 
-		if (!setMotorSetpoints(msg->val, msg->val)) BrownoutModulePipe->pushQueue(new Message("Failed to do test brownout motion!", HIGH));
+    //set reference
+		if (!setMotorSetpoints(msg->val, msg->val, rev::ControlType::kCurrent)) BrownoutModulePipe->pushQueue(new Message("Failed to do test brownout motion!", HIGH));
     return;
 	}
 	// Add rest of manipulator code...

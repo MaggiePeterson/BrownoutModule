@@ -7,6 +7,7 @@ void BrownoutModule::periodicInit(){
     this->msInterval = BrownoutModuleRunInterval;
     this->ErrorModulePipe = pipes[0];
 	this->DriveBaseModulePipe = pipes[1];
+
 }
 
 void BrownoutModule::periodicRoutine(){
@@ -72,7 +73,7 @@ void BrownoutModule::calculateBatteryResistance(){
     std::vector<double> currentData;
     std::vector<double> voltageData;
 
-    double moveSetpoint = 10;
+    double moveSetpoint = 5;
 
     DriveBaseModulePipe->pushQueue(new Message("", moveSetpoint));
 
@@ -84,7 +85,7 @@ void BrownoutModule::calculateBatteryResistance(){
         ErrorModulePipe->pushQueue(new Message("Failed to set motors for Brownout Module", HIGH));
     }
     else {
-
+            //need to fix
         startTime = frc::Timer().GetFPGATimestamp();
         TIME_OUT = 1000;
 
@@ -92,6 +93,9 @@ void BrownoutModule::calculateBatteryResistance(){
         while (frc::Timer().GetFPGATimestamp() - startTime < TIME_OUT){
             currentData.push_back(pdp->GetTotalCurrent());
             voltageData.push_back(pdp->GetVoltage());
+            DriveBaseModulePipe->pushQueue(new Message("", moveSetpoint));
+            moveSetpoint++;
+
         }
 
     }
@@ -124,9 +128,8 @@ double BrownoutModule::getLineOfBestFitSlope(std::vector<double> xData, std::vec
 /* checks if current draw will drop voltage below 7V */
 bool BrownoutModule::isBrownout(){
     
-    double potentialVoltDrop = frc::DriverStation::GetInstance().GetBatteryVoltage() - getBatteryResistance()*pdp->GetTotalCurrent();
+    double potentialVoltDrop = getBatteryResistance()*pdp->GetTotalCurrent();
     return potentialVoltDrop < VOLTAGE_THRESHOLD;
 }
-
 
 std::vector<uint8_t> BrownoutModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, DriveBaseModuleID}; }
