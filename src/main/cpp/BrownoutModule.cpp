@@ -31,6 +31,11 @@ void BrownoutModule::periodicRoutine(){
     if(!(writeData(fileName))){
         ErrorModulePipe->pushQueue(new Message("Failed to write Brownout data to file", LOW));
     }
+
+    double startTime = frc::Timer().GetFPGATimestamp();
+    accumulatePower(frc::Timer().GetFPGATimestamp() - startTime);
+
+
 }
 
 /* writes data to csv file */
@@ -128,8 +133,17 @@ double BrownoutModule::getLineOfBestFitSlope(std::vector<double> xData, std::vec
 /* checks if current draw will drop voltage below 7V */
 bool BrownoutModule::isBrownout(){
     
-    double potentialVoltDrop = getBatteryResistance()*pdp->GetTotalCurrent();
-    return potentialVoltDrop < VOLTAGE_THRESHOLD;
+     //HAL_GetBrownedOut(1);
+     return true;
+
+}
+
+void BrownoutModule::accumulatePower(double deltaTime){
+
+    //need to get power consumed
+    energyThisMatch += getBatteryPower()*deltaTime;
+
+    
 }
 
 std::vector<uint8_t> BrownoutModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, DriveBaseModuleID}; }

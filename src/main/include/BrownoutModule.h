@@ -33,6 +33,8 @@ class BrownoutModule : public ModuleBase {
   double getBatteryResistance();
   void calculateBatteryResistance();
   double getLineOfBestFitSlope(std::vector<double> xData, std::vector<double>yData);
+  void accumulatePower(double deltaTime);
+  double energyThisMatch = 0;
 
 
   public:
