@@ -125,6 +125,12 @@ void DriveBaseModule::periodicRoutine() {
 		if (!setMotorSetpoints(msg->val, msg->val, rev::ControlType::kCurrent)) BrownoutModulePipe->pushQueue(new Message("Failed to do test brownout motion!", HIGH));
     return;
 	}
+
+  if(ErrorModulePipe->popQueue()->val == FATAL){
+    double scaling = BrownoutModulePipe->popQueue()->val;
+    setDriveCurrLimit(motorInitMaxCurrent, scaling*motorInitRatedCurrent, motorInitLimitCycles);
+
+  }
 	// Add rest of manipulator code...
 }
 

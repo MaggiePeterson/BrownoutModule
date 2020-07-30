@@ -26,6 +26,7 @@ void BrownoutModule::periodicRoutine(){
 
     if(isBrownout()){
         ErrorModulePipe->pushQueue(new Message("Brownout will occur!", FATAL));
+        DriveBaseModulePipe->pushQueue(new Message("", getCurrentLimitScaling()));
     }
 
     if(!(writeData(fileName))){
@@ -35,7 +36,6 @@ void BrownoutModule::periodicRoutine(){
     double startTime = frc::Timer().GetFPGATimestamp();
     accumulatePower(frc::Timer().GetFPGATimestamp() - startTime);
 
-
 }
 
 /* writes data to csv file */
@@ -44,7 +44,7 @@ bool BrownoutModule::writeData(std::string fileName){
     std::ofstream myFile;
     myFile.open (fileName);
     
-    if (myFile <<  frc::Timer().GetFPGATimestamp() << ", " << pdp->GetTotalCurrent() << ", "<< pdp->GetVoltage() << ", " << getBatteryPower() << ", " << std::endl){
+    if (myFile <<  frc::Timer().GetFPGATimestamp() << ", " << pdp->GetTotalCurrent() << ", "<< pdp->GetVoltage() << ", " << getBatteryPower() << ", " << energyThisMatch << std::endl){
         
         myFile.close();
         return true;
@@ -63,7 +63,7 @@ double BrownoutModule::getBatteryPower(){
 
 double BrownoutModule::getMaxCurrentDraw(){
     
-    return 0; 
+    return pdp->GetVoltage() - getBatteryResistance() * getMotorCurrentDraw();; 
 
 }
 
@@ -130,20 +130,27 @@ double BrownoutModule::getLineOfBestFitSlope(std::vector<double> xData, std::vec
    return slope;
 }
 
-/* checks if current draw will drop voltage below 7V */
 bool BrownoutModule::isBrownout(){
     
-     //HAL_GetBrownedOut(1);
-     return true;
+    return frc::RobotController::IsBrownedOut();
 
 }
 
 void BrownoutModule::accumulatePower(double deltaTime){
 
-    //need to get power consumed
     energyThisMatch += getBatteryPower()*deltaTime;
 
-    
 }
+
+double BrownoutModule::getMotorCurrentDraw(){
+    return pdp->GetCurrent(LMOTOR_FRONT_CHANNEL) + pdp->GetCurrent(RMOTOR_FRONT_CHANNEL) + pdp->GetCurrent(LMOTOR_FOLLOWER_CHANNEL) + pdp->GetCurrent(RMOTOR_FOLLOWER_CHANNEL);
+}
+
+double BrownoutModule::getCurrentLimitScaling(){
+
+    return (VOLTAGE_THRESHOLD - pdp->GetVoltage())/(getBatteryResistance() * getMotorCurrentDraw());
+
+}
+
 
 std::vector<uint8_t> BrownoutModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, DriveBaseModuleID}; }
