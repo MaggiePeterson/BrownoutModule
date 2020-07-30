@@ -24,6 +24,9 @@ void BrownoutModule::periodicRoutine(){
         hasRun = true;
     }
 
+    double startTime = frc::Timer().GetFPGATimestamp();
+    accumulatePower(frc::Timer().GetFPGATimestamp() - startTime);
+
     if(isBrownout()){
         ErrorModulePipe->pushQueue(new Message("Brownout will occur!", FATAL));
         DriveBaseModulePipe->pushQueue(new Message("", getCurrentLimitScaling()));
@@ -32,9 +35,6 @@ void BrownoutModule::periodicRoutine(){
     if(!(writeData(fileName))){
         ErrorModulePipe->pushQueue(new Message("Failed to write Brownout data to file", LOW));
     }
-
-    double startTime = frc::Timer().GetFPGATimestamp();
-    accumulatePower(frc::Timer().GetFPGATimestamp() - startTime);
 
 }
 
@@ -51,8 +51,6 @@ bool BrownoutModule::writeData(std::string fileName){
     }
     myFile.close();
     return false;
-    
-    
 
 }
 
@@ -78,9 +76,9 @@ void BrownoutModule::calculateBatteryResistance(){
     std::vector<double> currentData;
     std::vector<double> voltageData;
 
-    double moveSetpoint = 5;
+    double currSetpoint = 5;
 
-    DriveBaseModulePipe->pushQueue(new Message("", moveSetpoint));
+    DriveBaseModulePipe->pushQueue(new Message("", currSetpoint));
 
     double startTime; 
     double TIME_OUT; 
@@ -90,16 +88,17 @@ void BrownoutModule::calculateBatteryResistance(){
         ErrorModulePipe->pushQueue(new Message("Failed to set motors for Brownout Module", HIGH));
     }
     else {
-            //need to fix
+         
         startTime = frc::Timer().GetFPGATimestamp();
         TIME_OUT = 1000;
 
-        //if motors set, collect voltage and current
+        //collect voltage and current
         while (frc::Timer().GetFPGATimestamp() - startTime < TIME_OUT){
+            
             currentData.push_back(pdp->GetTotalCurrent());
             voltageData.push_back(pdp->GetVoltage());
-            DriveBaseModulePipe->pushQueue(new Message("", moveSetpoint));
-            moveSetpoint++;
+            DriveBaseModulePipe->pushQueue(new Message("", currSetpoint));
+            currSetpoint++;
 
         }
 
@@ -143,12 +142,19 @@ void BrownoutModule::accumulatePower(double deltaTime){
 }
 
 double BrownoutModule::getMotorCurrentDraw(){
-    return pdp->GetCurrent(LMOTOR_FRONT_CHANNEL) + pdp->GetCurrent(RMOTOR_FRONT_CHANNEL) + pdp->GetCurrent(LMOTOR_FOLLOWER_CHANNEL) + pdp->GetCurrent(RMOTOR_FOLLOWER_CHANNEL);
+    return pdp->GetCurrent(LMOTOR_LEAD_CHANNEL) + pdp->GetCurrent(RMOTOR_LEAD_CHANNEL) + 
+        pdp->GetCurrent(LMOTOR_FOLLOWER_CHANNEL) + pdp->GetCurrent(RMOTOR_FOLLOWER_CHANNEL);
 }
 
 double BrownoutModule::getCurrentLimitScaling(){
 
-    return (VOLTAGE_THRESHOLD - pdp->GetVoltage())/(getBatteryResistance() * getMotorCurrentDraw());
+    //scaling factor to avoid brownout
+    double scaling =  (VOLTAGE_THRESHOLD - pdp->GetVoltage())/(getBatteryResistance() * getMotorCurrentDraw());
+    
+    if (scaling >= 1 || scaling < 0)
+        return 1;
+
+    return scaling;
 
 }
 
