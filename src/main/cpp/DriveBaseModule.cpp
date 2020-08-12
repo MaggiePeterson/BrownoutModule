@@ -146,4 +146,4 @@ double DriveBaseModule::getDriveVoltage(){
 }
  
 
-std::vector<uint8_t> DriveBaseModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, BrownoutModuleID}; }
+std::vector<uint8_t> DriveBaseModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, BrownoutModuleID, UpdateMotorModuleID}; }

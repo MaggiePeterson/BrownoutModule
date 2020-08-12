@@ -151,7 +151,7 @@ double BrownoutModule::getCurrentLimitScaling(){
     //scaling factor to avoid brownout
     double scaling =  (VOLTAGE_THRESHOLD - pdp->GetVoltage())/(getBatteryResistance() * getMotorCurrentDraw());
     
-    if (scaling >= 1 || scaling < 0)
+    if (scaling > 1 || scaling < 0)
         return 1;
 
     return scaling;
@@ -159,4 +159,4 @@ double BrownoutModule::getCurrentLimitScaling(){
 }
 
 
-std::vector<uint8_t> BrownoutModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, DriveBaseModuleID}; }
+std::vector<uint8_t> BrownoutModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, DriveBaseModuleID, UpdateMotorModuleID}; }

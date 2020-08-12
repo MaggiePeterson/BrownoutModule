@@ -20,6 +20,7 @@
 #include "DriveBaseModule.h"
 #include "ErrorModule.h"
 #include "BrownoutModule.h"
+#include "UpdateMotorModule.h"
 
 void Robot::RobotInit() {
   /**
@@ -38,7 +39,7 @@ void Robot::RobotInit() {
    * See Error.h for relevant macros
    */
 
-  if (!Constructor::constructThreadedRobot(std::vector<ModuleBase*> {new ErrorModule, new DriveBaseModule, new BrownoutModule}, this)) { // Pass a reference of this object to all modules
+  if (!Constructor::constructThreadedRobot(std::vector<ModuleBase*> {new ErrorModule, new DriveBaseModule, new BrownoutModule, new UpdateMotorModule}, this)) { // Pass a reference of this object to all modules
     frc::DriverStation::ReportError("[Constructor] Web Construction has failed; ensure it is acyclic and constructable");
     return;
   }

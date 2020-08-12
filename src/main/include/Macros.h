@@ -8,6 +8,7 @@
 #define InetEthModuleID 5
 #define ShuffleboardModuleID 6
 #define ErrorFileIOModuleID 7
+#define UpdateMotorModuleID 8
 
 // Error loglevel
 #define INFO 0
@@ -21,3 +22,4 @@
 #define DriveBaseModuleRunInterval 20 
 #define ControllerModuleRunInterval 35
 #define BrownoutModuleRunInterval 20
+#define UpdateMotorModuleRunInterval 20
