@@ -28,19 +28,28 @@ class BrownoutModule : public ModuleBase {
   frc::PowerDistributionPanel* pdp;
   double batteryResistance = 0.0;
   bool hasRun = false;
+  const std::string fileName = "/";
+  const std::string energyLog = "/";
+  std::ofstream myFile;
+  std::ofstream energyStream;
 
   bool writeData(std::string fileName);
-  const std::string fileName = "/";
   double getBatteryPower();
   double getMaxCurrentDraw();
   bool isBrownout();
   double getBatteryResistance();
   void calculateBatteryResistance();
-  double getLineOfBestFitSlope(std::vector<double> xData, std::vector<double>yData);
-  void accumulatePower(double deltaTime);
+  void getLineOfBestFitSlope(double curr, double volt);
+  void accumulatePower(double time);
   double energyThisMatch = 0;
   double getMotorCurrentDraw();
   double getCurrentLimitScaling();
+  double nonMotorCurrent;
+
+  double currCurrent = 0;
+  double currVoltage = 0;
+
+  double xsum = 0.0, x2sum = 0.0, ysum = 0.0, xysum = 0.0;
 
 
   public:
