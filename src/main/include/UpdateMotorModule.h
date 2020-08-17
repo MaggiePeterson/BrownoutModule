@@ -32,16 +32,13 @@ class UpdateMotorModule : public ModuleBase {
   GenericPipe* AutonomousModulePipe;
   GenericPipe* DriveBaseModulePipe;
 
-  rev::CANSparkMax* lMotor;
-  rev::CANSparkMax* lMotorFollower;
-  rev::CANSparkMax* rMotorFollower;
-  rev::CANSparkMax* rMotor;
-
   public:
 
   std::vector<uint8_t> getConstructorArgs();
   void periodicInit();
   void periodicRoutine();
+  void setMotorSetpoint(double setpoint);
+  void setCurrentLimit(double scaling);
 
 };
 

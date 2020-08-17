@@ -112,6 +112,7 @@ void DriveBaseModule::periodicRoutine() {
 
   if (stateRef->IsTest()) {
     
+    //testing points of curr and volt to estimate battery resistance
 		Message* msg;
     //get latest packet
     while( BrownoutModulePipe->size() > 0 )
@@ -121,7 +122,7 @@ void DriveBaseModule::periodicRoutine() {
     BrownoutModulePipe->pushQueue(new Message("Forward Move", INFO));
 		ErrorModulePipe->pushQueue(new Message("Value: " + std::to_string(msg->val), INFO));
 
-    //set reference
+    //set curret
 		if (!setMotorSetpoints(msg->val, msg->val, rev::ControlType::kCurrent)) BrownoutModulePipe->pushQueue(new Message("Failed to do test brownout motion!", HIGH));
     return;
 	}
