@@ -59,9 +59,9 @@ double BrownoutModule::getBatteryPower(){
     return frc::DriverStation::GetInstance().GetBatteryVoltage() * frc::DriverStation::GetInstance().GetBatteryVoltage() / getBatteryResistance(); 
 }
 
-double BrownoutModule::getMaxCurrentDraw(){
+bool BrownoutModule::willBrownOut(){
     
-    return pdp->GetVoltage() - getBatteryResistance() * getMotorCurrentDraw();; 
+    return frc::DriverStation::GetInstance().GetBatteryVoltage() - batteryResistance * (totalCurrLimit - getMotorCurrentDraw()); 
 
 }
 
@@ -146,6 +146,5 @@ double BrownoutModule::getCurrentLimitScaling(){
     return scaling;
 
 }
-
 
 std::vector<uint8_t> BrownoutModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, DriveBaseModuleID, UpdateMotorModuleID}; }

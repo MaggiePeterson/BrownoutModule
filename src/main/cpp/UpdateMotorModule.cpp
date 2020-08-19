@@ -22,9 +22,6 @@ void UpdateMotorModule::periodicRoutine() {
 
     else if (msg->str == "CURRENT")
         setCurrentLimit(msg->val);
-    
-
-
   
 }
 /* QUESTION: how is this different than passing it to the DriveBase

@@ -35,16 +35,18 @@ class BrownoutModule : public ModuleBase {
 
   bool writeData(std::string fileName);
   double getBatteryPower();
-  double getMaxCurrentDraw();
+  bool willBrownOut();
   bool isBrownout();
   double getBatteryResistance();
   void calculateBatteryResistance();
   void getLineOfBestFitSlope(double curr, double volt);
   void accumulatePower(double time);
+
   double energyThisMatch = 0;
   double getMotorCurrentDraw();
   double getCurrentLimitScaling();
   double nonMotorCurrent;
+  double totalCurrLimit;
 
   double currCurrent = 0;
   double currVoltage = 0;
