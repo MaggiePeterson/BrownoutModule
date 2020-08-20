@@ -9,6 +9,22 @@ void BrownoutModule::periodicInit(){
 	this->DriveBaseModulePipe = pipes[1];
     energyThisMatch = 0;
 
+    energyInStream.open(energyLog);
+    double tmpTime, tmpEnergy = 0;
+     
+    if(energyInStream.peek() == std::ifstream::traits_type::eof()){ //if is empty
+        fileEmpty = true;
+    }
+    else {
+        energyInStream >> tmpTime;
+        energyInStream >> tmpEnergy;
+
+        energyLogTime.push_back(tmpTime);
+        pastEnergyLog.push_back(tmpEnergy);
+        
+    }
+    energyInStream.close();
+
     myFile.open (fileName);
     energyStream.open (energyLog);
 
@@ -33,7 +49,7 @@ void BrownoutModule::periodicRoutine(){
 
     if(isBrownout()){
         ErrorModulePipe->pushQueue(new Message("Brownout will occur!", FATAL));
-        DriveBaseModulePipe->pushQueue(new Message("", getCurrentLimitScaling()));
+        DriveBaseModulePipe->pushQueue(new Message("", getDriveCurrentLimitScaling()));
     }
 
     if(!(writeData(fileName))){
@@ -123,10 +139,17 @@ bool BrownoutModule::isBrownout(){
 
 }
 
-void BrownoutModule::accumulatePower(double time){
+bool BrownoutModule::accumulatePower(double time){
 
-    energyThisMatch += pdp->GetTotalEnergy();
-    energyStream << pdp->GetTotalEnergy() << ", ";
+    if(fileEmpty) return false;
+
+    energyStream << time << ", "<< pdp->GetTotalEnergy() << std::endl;
+
+    for(int i = 1; i < energyLogTime.size(); i++){
+        if(energyLogTime.at(i - 1) <= time && time <= energyLogTime.at(i)){
+            return (pdp->GetTotalEnergy() > pastEnergyLog.at(i));
+        }
+    }
 
 }
 
