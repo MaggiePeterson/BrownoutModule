@@ -60,7 +60,10 @@ class BrownoutModule : public ModuleBase {
   void periodicInit();
   void periodicRoutine();
 
-  
+  /* TODO 
+    Energy match data
+    motor module
+    */
  
 };
 

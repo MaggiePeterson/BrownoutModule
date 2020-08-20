@@ -130,16 +130,18 @@ void BrownoutModule::accumulatePower(double time){
 
 }
 
+//add motors
 double BrownoutModule::getMotorCurrentDraw(){
     return pdp->GetCurrent(LMOTOR_LEAD_CHANNEL) + pdp->GetCurrent(RMOTOR_LEAD_CHANNEL) + 
         pdp->GetCurrent(LMOTOR_FOLLOWER_CHANNEL) + pdp->GetCurrent(RMOTOR_FOLLOWER_CHANNEL);
 }
 
-double BrownoutModule::getCurrentLimitScaling(){
+double BrownoutModule::getDriveCurrentLimitScaling(){
 
     //scaling factor to avoid brownout
-    double scaling =  (VOLTAGE_THRESHOLD - pdp->GetVoltage())/(getBatteryResistance() * getMotorCurrentDraw());
-    
+    double scaling =  (VOLTAGE_THRESHOLD - pdp->GetVoltage())/(getBatteryResistance() * (totalCurrLimit - getMotorCurrentDraw())); 
+    scaling *= (100 - nonMotorCurrent)/100.0; //scale drive
+
     if (scaling > 1)
         return 1;
 
