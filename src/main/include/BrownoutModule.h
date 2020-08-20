@@ -39,22 +39,17 @@ class BrownoutModule : public ModuleBase {
   double getBatteryPower();
   bool willBrownOut();
   bool isBrownout();
-  double getBatteryResistance();
   void calculateBatteryResistance();
-  void getLineOfBestFitSlope(double curr, double volt);
-  bool accumulatePower(double time);
+  void takeSum(double curr, double volt);
+  bool checkEnergy(double time);
 
-  double energyThisMatch = 0;
   double getMotorCurrentDraw();
   double getDriveCurrentLimitScaling();
   double nonMotorCurrent;
   double totalCurrLimit;
 
-  double currCurrent = 0;
-  double currVoltage = 0;
-
-  std::vector<double> energyLogTime;
-  std::vector<double> pastEnergyLog;
+  std::vector<double> timestamp;
+  std::vector<double> pastEnergy;
 
   double xsum = 0.0, x2sum = 0.0, ysum = 0.0, xysum = 0.0;
 
