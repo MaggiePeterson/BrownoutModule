@@ -26,6 +26,7 @@ class BrownoutModule : public ModuleBase {
   GenericPipe* ErrorModulePipe;
   GenericPipe* DriveBaseModulePipe;
   frc::PowerDistributionPanel* pdp;
+
   double batteryResistance = 0.0;
   bool hasRun = false;
   bool fileEmpty = true;
@@ -34,6 +35,11 @@ class BrownoutModule : public ModuleBase {
   std::ofstream myFile;
   std::ofstream energyStream;
   std::ifstream energyInStream;
+  double nonDriveLoad;
+  double totalCurrLimit;
+  std::vector<double> timestamp;
+  std::vector<double> pastEnergy;
+  double xsum = 0.0, x2sum = 0.0, ysum = 0.0, xysum = 0.0; //calculating resistance
 
   bool writeData(std::string fileName);
   double getBatteryPower();
@@ -42,27 +48,14 @@ class BrownoutModule : public ModuleBase {
   void calculateBatteryResistance();
   void takeSum(double curr, double volt);
   bool checkEnergy(double time);
-
   double getMotorCurrentDraw();
   double getDriveCurrentLimitScaling();
-  double nonDriveLoad;
-  double totalCurrLimit;
-
-  std::vector<double> timestamp;
-  std::vector<double> pastEnergy;
-
-  double xsum = 0.0, x2sum = 0.0, ysum = 0.0, xysum = 0.0;
 
   public:
 
   std::vector<uint8_t> getConstructorArgs();
   void periodicInit();
   void periodicRoutine();
-
-  /* TODO 
-    Energy match data
-    motor module
-  */ 
  
 };
 
