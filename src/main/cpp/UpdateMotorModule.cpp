@@ -24,8 +24,9 @@ void UpdateMotorModule::periodicRoutine() {
         setCurrentLimit(msg->val);
   
 }
-/* QUESTION: how is this different than passing it to the DriveBase
-    should i pass the motor object? */
+
+//sends data to DriveBaseModule
+//or does this have to update the motor itself
 void UpdateMotorModule::setMotorSetpoint(double setpoint){
 
     DriveBaseModulePipe->pushQueue(new Message("SETPOINT", setpoint));
@@ -33,9 +34,8 @@ void UpdateMotorModule::setMotorSetpoint(double setpoint){
 }
 
 void UpdateMotorModule::setCurrentLimit(double scaling){
+    
     DriveBaseModulePipe->pushQueue(new Message("CURRENT", scaling));
-
-
 }
 
 std::vector<uint8_t> UpdateMotorModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, BrownoutModuleID}; }

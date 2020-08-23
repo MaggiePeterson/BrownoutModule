@@ -46,14 +46,18 @@ void BrownoutModule::periodicRoutine(){
         hasRun = true;
     }
 
-    if( willBrownOut() || checkEnergy(frc::Timer().GetFPGATimestamp())){
-        DriveBaseModulePipe->pushQueue(new Message("", getDriveCurrentLimitScaling()));
-        ErrorModulePipe->pushQueue(new Message(std::to_string(frc::Timer().GetFPGATimestamp()) + ": Lowering Current Limit", INFO));
+    //Errors saved to file by ErrorModule w/ timestamp
+    if(checkEnergy(frc::Timer().GetFPGATimestamp()) || willBrownOut()){
+        DriveBaseModulePipe->pushQueue(new Message("CURRENT", getDriveCurrentLimitScaling()));
+        ErrorModulePipe->pushQueue(new Message(std::to_string(frc::Timer().GetFPGATimestamp()) + ": Lowering Current Limit  - Exceeding Energy", INFO));
     }
-
+    if(willBrownOut()){
+        DriveBaseModulePipe->pushQueue(new Message("CURRENT", getDriveCurrentLimitScaling()));
+        ErrorModulePipe->pushQueue(new Message(std::to_string(frc::Timer().GetFPGATimestamp()) + ": Lowering Current Limit - Voltage Low", INFO));
+    }
     if(isBrownout()){
         ErrorModulePipe->pushQueue(new Message(std::to_string(frc::Timer().GetFPGATimestamp()) + ": Brownout occuring!", FATAL));
-        DriveBaseModulePipe->pushQueue(new Message("", getDriveCurrentLimitScaling()));
+        DriveBaseModulePipe->pushQueue(new Message("CURRENT", getDriveCurrentLimitScaling()));
     }
 
     if(!(writeData(fileName))){
@@ -127,13 +131,11 @@ void BrownoutModule::takeSum(double curr, double volt){
     ysum += volt;                       //calculate sigma(yi)
     x2sum += pow(curr,2);                //calculate sigma(x^2i)
     xysum += curr * volt;                    //calculate sigma(xi*yi)
-
 }
 
 bool BrownoutModule::isBrownout(){
     
     return frc::RobotController::IsBrownedOut();
-
 }
 
 bool BrownoutModule::checkEnergy(double time){
@@ -142,6 +144,7 @@ bool BrownoutModule::checkEnergy(double time){
 
     energyStream << time << ", "<< pdp->GetTotalEnergy() << std::endl;
 
+    //compare around the same time
     for(uint8_t i = 1; i < pastEnergy.size(); i++){
         if(timestamp.at(i - 1) <= time && time <= timestamp.at(i)){
             return (pdp->GetTotalEnergy() > pastEnergy.at(i));
@@ -150,7 +153,7 @@ bool BrownoutModule::checkEnergy(double time){
 
 }
 
-//add motors
+//add motor channels
 double BrownoutModule::getMotorCurrentDraw(){
     return pdp->GetCurrent(LMOTOR_LEAD_CHANNEL) + pdp->GetCurrent(RMOTOR_LEAD_CHANNEL) + 
         pdp->GetCurrent(LMOTOR_FOLLOWER_CHANNEL) + pdp->GetCurrent(RMOTOR_FOLLOWER_CHANNEL);
@@ -160,7 +163,7 @@ double BrownoutModule::getDriveCurrentLimitScaling(){
 
     //scaling factor to avoid brownout
     double scaling =  (VOLTAGE_THRESHOLD - pdp->GetVoltage())/(batteryResistance * (totalCurrLimit - getMotorCurrentDraw())); 
-    scaling *= (100 - nonMotorCurrent)/100.0; //scale drive
+    scaling *= (100 - nonDriveLoad)/100.0; //scale drive
 
     if (scaling > 1)
         return 1;

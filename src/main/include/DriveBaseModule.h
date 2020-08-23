@@ -45,6 +45,7 @@ class DriveBaseModule : public ModuleBase {
   GenericPipe* ErrorModulePipe;
   GenericPipe* BrownoutModulePipe;
   GenericPipe* AutonomousModulePipe;
+  GenericPipe* UpdateMotorModulePipe;
 
   frc::Joystick* driverStick;
   frc::Joystick* operatorStick;

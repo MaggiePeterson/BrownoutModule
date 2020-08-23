@@ -128,7 +128,7 @@ void DriveBaseModule::periodicRoutine() {
 	}
 
   if(ErrorModulePipe->popQueue()->val == FATAL){
-    double scaling = BrownoutModulePipe->popQueue()->val;
+    double scaling = UpdateMotorModulePipe->popQueue()->val;
     setDriveCurrLimit(motorInitMaxCurrent, scaling*motorInitRatedCurrent, motorInitLimitCycles);
 
   }

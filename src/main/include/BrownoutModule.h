@@ -45,7 +45,7 @@ class BrownoutModule : public ModuleBase {
 
   double getMotorCurrentDraw();
   double getDriveCurrentLimitScaling();
-  double nonMotorCurrent;
+  double nonDriveLoad;
   double totalCurrLimit;
 
   std::vector<double> timestamp;
