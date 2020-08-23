@@ -162,7 +162,7 @@ double BrownoutModule::getMotorCurrentDraw(){
 double BrownoutModule::getDriveCurrentLimitScaling(){
 
     //scaling factor to avoid brownout
-    double scaling =  (VOLTAGE_THRESHOLD - pdp->GetVoltage())/(batteryResistance * (totalCurrLimit - getMotorCurrentDraw())); 
+    double scaling =  (VOLTAGE_THRESHOLD - pdp->GetVoltage())/(batteryResistance * getMotorCurrentDraw()); 
     scaling *= (100 - nonDriveLoad)/100.0; //scale drive
 
     if (scaling > 1)
