@@ -16,19 +16,14 @@ void BrownoutModule::periodicInit(){
     }
     else {
 
-        while(energyInStream >> tmpTime){
-        
-            energyInStream >> tmpEnergy;
-
-            timestamp.push_back(tmpTime);
-            pastEnergy.push_back(tmpEnergy);
-        }
+        compilePastMatchData();
     }
 
     energyInStream.close();
 
     myFile.open (fileName);
     energyStream.open (energyLog);
+    energyStream << -4444 << std::endl;
 
 }
 
@@ -65,6 +60,49 @@ void BrownoutModule::periodicRoutine(){
     }
 
 }
+
+  void BrownoutModule::compilePastMatchData(){
+
+    std::vector<double> time;
+    std::vector<double> energy;
+
+    std::vector<std::vector<double>> allTimes;
+    std::vector<std::vector<double>> allEnergy;
+    double tmpTime, tmpEnergy;
+
+    while (energyInStream >> tmpTime){
+
+        //get matches in vectors
+        while (tmpTime != -4444){
+            
+            time.push_back(tmpTime);
+
+            energyInStream >> tmpEnergy;
+            energy.push_back(tmpEnergy);
+
+        }
+        allTimes.push_back(time);
+        allEnergy.push_back(energy);
+      }
+
+    double avgTime = 0, avgEnergy = 0;
+    for(int i = 0; i < allTimes.front().size(); i++){
+        for(int j = 0; j < allTimes.size(); j++){
+            avgTime += allTimes[i][j];
+            avgEnergy += allEnergy[i][j];
+        }
+
+        avgTime /= allTimes.size();
+        avgEnergy /= allTimes.size();
+
+        timestamp.push_back(avgTime);
+        pastEnergy.push_back(avgEnergy);
+
+    }
+
+
+  }
+
 
 /* writes data to csv file */
 bool BrownoutModule::writeData(std::string fileName){
@@ -147,7 +185,7 @@ bool BrownoutModule::checkEnergy(double time){
     //compare around the same time
     for(uint8_t i = 1; i < pastEnergy.size(); i++){
         if(timestamp.at(i - 1) <= time && time <= timestamp.at(i)){
-            return (pdp->GetTotalEnergy() > pastEnergy.at(i));
+            return (pdp->GetTotalEnergy() - pastEnergy.at(i) > ENERGY_THRESHOLD*pastEnergy.at(i));
         }
     }
 

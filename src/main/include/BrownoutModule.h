@@ -16,6 +16,7 @@
 #include <frc/RobotController.h>
 
 #define VOLTAGE_THRESHOLD 7.0
+#define ENERGY_THRESHOLD 0.20
 #define LMOTOR_LEAD_CHANNEL 0.0
 #define RMOTOR_LEAD_CHANNEL 0.0
 #define LMOTOR_FOLLOWER_CHANNEL 0.0
@@ -40,6 +41,7 @@ class BrownoutModule : public ModuleBase {
   std::vector<double> timestamp;
   std::vector<double> pastEnergy;
   double xsum = 0.0, x2sum = 0.0, ysum = 0.0, xysum = 0.0; //calculating resistance
+  void compilePastMatchData();
 
   bool writeData(std::string fileName);
   double getBatteryPower();
