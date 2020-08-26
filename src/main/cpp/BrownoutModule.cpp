@@ -15,7 +15,6 @@ void BrownoutModule::periodicInit(){
         fileEmpty = true;
     }
     else {
-
         compilePastMatchData();
     }
 
@@ -23,7 +22,7 @@ void BrownoutModule::periodicInit(){
 
     myFile.open (fileName);
     energyStream.open (energyLog);
-    energyStream << -4444 << std::endl;
+    energyStream << -1 << std::endl; //start of match
 
 }
 
@@ -73,7 +72,8 @@ void BrownoutModule::periodicRoutine(){
     while (energyInStream >> tmpTime){
 
         //get matches in vectors
-        while (tmpTime != -4444){
+
+        while (tmpTime != -1){
             
             time.push_back(tmpTime);
 
@@ -86,20 +86,23 @@ void BrownoutModule::periodicRoutine(){
       }
 
     double avgTime = 0, avgEnergy = 0;
-    for(int i = 0; i < allTimes.front().size(); i++){
+    
+    //getting averages of matches -  average time recorded and energy
+    for(int i = 0; i < allTimes.back().size(); i++){
         for(int j = 0; j < allTimes.size(); j++){
-            avgTime += allTimes[i][j];
-            avgEnergy += allEnergy[i][j];
+
+            //average values with same time
+            avgTime += allTimes[j][i];
+            avgEnergy += allEnergy[j][i];
         }
 
-        avgTime /= allTimes.size();
-        avgEnergy /= allTimes.size();
+        avgTime /= allTimes.back().size();
+        avgEnergy /= allTimes.back().size();
 
         timestamp.push_back(avgTime);
         pastEnergy.push_back(avgEnergy);
 
     }
-
 
   }
 
