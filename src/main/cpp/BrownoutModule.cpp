@@ -22,7 +22,10 @@ void BrownoutModule::periodicInit(){
 
     myFile.open (fileName);
     energyStream.open (energyLog);
-    energyStream << -1 << std::endl; //start of match
+
+    //fix this to tell matches apart -- real time match time data
+    //ignore line until start of match time
+    //if match incojmpelte dischard
 
 }
 
@@ -41,7 +44,8 @@ void BrownoutModule::periodicRoutine(){
     }
 
     //Errors saved to file by ErrorModule w/ timestamp
-    if(checkEnergy(frc::Timer().GetFPGATimestamp()) || willBrownOut()){
+    //use match timer
+    if(checkEnergy(frc::Timer().GetFPGATimestamp(), frc::Timer().GetMatchTime()) || willBrownOut()){
         DriveBaseModulePipe->pushQueue(new Message("CURRENT", getDriveCurrentLimitScaling()));
         ErrorModulePipe->pushQueue(new Message(std::to_string(frc::Timer().GetFPGATimestamp()) + ": Lowering Current Limit  - Exceeding Energy", INFO));
     }
@@ -58,34 +62,53 @@ void BrownoutModule::periodicRoutine(){
         ErrorModulePipe->pushQueue(new Message("Failed to write Brownout data to file", LOW));
     }
 
+    // add close somwhere hereeeee
+
 }
 
   void BrownoutModule::compilePastMatchData(){
 
-    std::vector<double> time;
-    std::vector<double> energy;
+      //use get match timer frctimer::getmatchtime
+      //throw away incomplete data
+      // send average match adn data points
+      // save average file, data from current game file, all raw data from previous games used to calc average
+      //close file from current match should go into new average file and appended to raw data file
+
+      /* match timer 0 take and sum then divide = avg energy at time = 0;
+      then decide rate this run = break up the match
+      take all data from 0 to 200 MS
+      average then together the range of the time */
+
+    std::vector<double> tmpTime;
+    std::vector<double> tmpEnergy;
 
     std::vector<std::vector<double>> allTimes;
     std::vector<std::vector<double>> allEnergy;
-    double tmpTime, tmpEnergy;
+    double timer, matchTime, energy;
 
-    while (energyInStream >> tmpTime){
+    //while can read file
+    while(energyInStream >> timer){
 
-        //get matches in vectors
+        while (matchTime >= 0){
+            energyInStream >> matchTime;
+            energyInStream >> energy;
 
-        while (tmpTime != -1){
-            
-            time.push_back(tmpTime);
-
-            energyInStream >> tmpEnergy;
-            energy.push_back(tmpEnergy);
-
+            tmpTime.push_back(matchTime);
+            tmpEnergy.push_back(energy);
         }
-        allTimes.push_back(time);
-        allEnergy.push_back(energy);
-      }
 
-    double avgTime = 0, avgEnergy = 0;
+        // only track completed matches
+        if(tmpTime.back() < 0 ) {
+            allTimes.push_back(tmpTime);
+            allEnergy.push_back(tmpEnergy);
+        }
+
+        tmpTime.clear();
+        tmpEnergy.clear();
+
+    }
+
+    double avgTime = 0, avgEnergy = 0, currTime = 0;
     
     //getting averages of matches -  average time recorded and energy
     for(int i = 0; i < allTimes.back().size(); i++){
@@ -94,6 +117,13 @@ void BrownoutModule::periodicRoutine(){
             //average values with same time
             avgTime += allTimes[j][i];
             avgEnergy += allEnergy[j][i];
+
+            // go thru all times
+            while(allTimes[j][i] >= 0 && allTimes[j][i] <= currTime + BrownoutModuleRunInterval){
+                timestamp.push_back(currTime);
+
+
+            }
         }
 
         avgTime /= allTimes.back().size();
@@ -112,7 +142,6 @@ bool BrownoutModule::writeData(std::string fileName){
     
     if (myFile <<  frc::Timer().GetFPGATimestamp() << ", " << pdp->GetTotalCurrent() << ", "<< pdp->GetVoltage() << ", " << getBatteryPower() << std::endl){
         
-        myFile.close();
         return true;
     }
     return false;
@@ -179,11 +208,15 @@ bool BrownoutModule::isBrownout(){
     return frc::RobotController::IsBrownedOut();
 }
 
-bool BrownoutModule::checkEnergy(double time){
+bool BrownoutModule::checkEnergy(double time, double matchTime){
 
     if(fileEmpty) return false;
 
-    energyStream << time << ", "<< pdp->GetTotalEnergy() << std::endl;
+    //matchTime counts down for current period; add time to auto 
+    if(stateRef->IsAutonomous())
+        matchTime += TELEOP_LENGTH;
+
+    energyStream << time << ", "<< matchTime<< "," << pdp->GetTotalEnergy() << std::endl;
 
     //compare around the same time
     for(uint8_t i = 1; i < pastEnergy.size(); i++){

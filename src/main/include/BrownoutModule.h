@@ -22,6 +22,9 @@
 #define LMOTOR_FOLLOWER_CHANNEL 0.0
 #define RMOTOR_FOLLOWER_CHANNEL 0.0
 
+#define TELEOP_LENGTH 150
+#define MATCH_LENGTH 165
+
 class BrownoutModule : public ModuleBase {
  
   GenericPipe* ErrorModulePipe;
@@ -31,7 +34,7 @@ class BrownoutModule : public ModuleBase {
   double batteryResistance = 0.0;
   bool hasRun = false;
   bool fileEmpty = true;
-  const std::string fileName = "BrownoutData.csv";
+  const std::string fileName = "BrownoutData.csv"; //change path
   const std::string energyLog = "EnergyLog.csv";
   std::ofstream myFile;
   std::ofstream energyStream;
@@ -49,7 +52,7 @@ class BrownoutModule : public ModuleBase {
   bool isBrownout();
   void calculateBatteryResistance();
   void takeSum(double curr, double volt);
-  bool checkEnergy(double time);
+  bool checkEnergy(double time, double matchTime);
   double getMotorCurrentDraw();
   double getDriveCurrentLimitScaling();
 
