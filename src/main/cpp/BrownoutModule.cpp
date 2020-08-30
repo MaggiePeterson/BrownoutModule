@@ -63,6 +63,10 @@ void BrownoutModule::periodicRoutine(){
     }
 
     // add close somwhere hereeeee
+    if(frc::Timer().GetMatchTime() == 0){
+        energyStream.close();
+        myFile.close();
+    }
 
 }
 
@@ -99,8 +103,24 @@ void BrownoutModule::periodicRoutine(){
 
         // only track completed matches
         if(tmpTime.back() < 0 ) {
-            allTimes.push_back(tmpTime);
-            allEnergy.push_back(tmpEnergy);
+
+            //averge into time ranges
+            double avgEn = 0, currTime = 0, lastTime = 0;
+            std::vector<double> timeInterval;
+            std::vector<double> avgEnergy;
+
+            for(int i = 0; i < tmpTime.size(); i++){
+
+                while(tmpTime[i] >= lastTime && tmpTime[i] <= currTime + BrownoutModuleRunInterval){
+                    avgEn += tmpEnergy[i];
+                }
+                lastTime = currTime;
+                currTime += BrownoutModuleRunInterval;
+                timestamp.push_back(currTime); //TODO make this only update once
+                avgEnergy.push_back(avgEn/BrownoutModuleRunInterval);
+            }
+
+            allEnergy.push_back(avgEnergy);
         }
 
         tmpTime.clear();
@@ -108,27 +128,21 @@ void BrownoutModule::periodicRoutine(){
 
     }
 
-    double avgTime = 0, avgEnergy = 0, currTime = 0;
+    double avgTime = 0, avgEnergy = 0, currTime = 0, lastTime = 0;
+    std::vector<double> smpTime;
+    std::vector<double> smpEnergy;
     
-    //getting averages of matches -  average time recorded and energy
-    for(int i = 0; i < allTimes.back().size(); i++){
+
+    for(int i = 0; i < allEnergy.back().size(); i++){
         for(int j = 0; j < allTimes.size(); j++){
-
             //average values with same time
-            avgTime += allTimes[j][i];
             avgEnergy += allEnergy[j][i];
-
-            // go thru all times
-            while(allTimes[j][i] >= 0 && allTimes[j][i] <= currTime + BrownoutModuleRunInterval){
-                timestamp.push_back(currTime);
-
-
-            }
+            
         }
 
-        avgTime /= allTimes.back().size();
         avgEnergy /= allTimes.back().size();
 
+        //fix time vector
         timestamp.push_back(avgTime);
         pastEnergy.push_back(avgEnergy);
 
