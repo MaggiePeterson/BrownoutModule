@@ -88,39 +88,65 @@ void BrownoutModule::periodicRoutine(){
 
     std::vector<std::vector<double>> allTimes;
     std::vector<std::vector<double>> allEnergy;
-    double timer, matchTime, energy;
+    double timer, matchTime = 0, energy;
 
+    double lastTime = 0;
+    double lastEnergy = 0;
+
+    std::vector<double> timeInterval;
+    std::vector<double> avgEnergy;
     //while can read file
-    while(energyInStream >> timer){
+    energyInStream >> timer;
+    energyInStream >> lastTime;
+    energyInStream >> lastEnergy;
 
-        while (matchTime >= 0){
-            energyInStream >> matchTime;
-            energyInStream >> energy;
+    while(energyInStream >> timer){
+        
+        tmpTime.push_back(lastTime);
+        tmpEnergy.push_back(lastEnergy);
+
+        energyInStream >> matchTime;
+        energyInStream >> energy;
+
+        while(matchTime < MATCH_LENGTH){
 
             tmpTime.push_back(matchTime);
             tmpEnergy.push_back(energy);
-        }
+
+            energyInStream >> matchTime;
+            energyInStream >> energy;
+
+            lastTime = matchTime; //beginning of match time, add to next match start
+            lastEnergy = energy;
+
+        };
 
         // only track completed matches
-        if(tmpTime.back() < 0 ) {
+        if(tmpTime.back() == 0 ) {
 
             //averge into time ranges
-            double avgEn = 0, currTime = 0, lastTime = 0;
-            std::vector<double> timeInterval;
-            std::vector<double> avgEnergy;
+            double avgEn = 0, currTime = BrownoutModuleRunInterval/1000.0, lastTime = 0;
+
+            avgEnergy.clear();
+            timeInterval.clear();
 
             for(int i = 0; i < tmpTime.size(); i++){
 
-                while(tmpTime[i] >= lastTime && tmpTime[i] <= currTime + BrownoutModuleRunInterval){
+                while(tmpTime[i] >= lastTime && tmpTime[i] <= currTime){ 
                     avgEn += tmpEnergy[i];
+                    i++;
                 }
-                lastTime = currTime;
-                currTime += BrownoutModuleRunInterval;
-                timestamp.push_back(currTime); //TODO make this only update once
+
+                timeInterval.push_back(lastTime); //TODO make this only update once
                 avgEnergy.push_back(avgEn/BrownoutModuleRunInterval);
+
+                lastTime = currTime;
+                currTime += BrownoutModuleRunInterval/1000.0;
+                
             }
 
             allEnergy.push_back(avgEnergy);
+            
         }
 
         tmpTime.clear();
@@ -128,7 +154,9 @@ void BrownoutModule::periodicRoutine(){
 
     }
 
-    double avgTime = 0, avgEnergy = 0, currTime = 0, lastTime = 0;
+    timestamp = timeInterval; 
+
+    double avgTime = 0, avgEnergyPoint = 0;
     std::vector<double> smpTime;
     std::vector<double> smpEnergy;
     
@@ -136,15 +164,15 @@ void BrownoutModule::periodicRoutine(){
     for(int i = 0; i < allEnergy.back().size(); i++){
         for(int j = 0; j < allTimes.size(); j++){
             //average values with same time
-            avgEnergy += allEnergy[j][i];
+            avgEnergyPoint += allEnergy[j][i];
             
         }
 
-        avgEnergy /= allTimes.back().size();
+        avgEnergyPoint /= allTimes.back().size();
 
         //fix time vector
         timestamp.push_back(avgTime);
-        pastEnergy.push_back(avgEnergy);
+        pastEnergy.push_back(avgEnergyPoint);
 
     }
 
