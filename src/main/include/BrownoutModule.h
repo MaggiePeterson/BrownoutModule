@@ -35,9 +35,13 @@ class BrownoutModule : public ModuleBase {
   bool hasRun = false;
   bool fileEmpty = true;
   const std::string fileName = "BrownoutData.csv"; //change path
-  const std::string energyLog = "EnergyLog.csv";
+  const std::string rawMatchFile = "RawEnergy.csv";
+  const std::string currMatchFile = "CurrentMatch.csv";
+  const std::string avgMatchFile = "AverageMatch.csv";
   std::ofstream myFile;
-  std::ofstream energyStream;
+
+  std::ofstream rawMatchStream;
+  std::ofstream currMatchStream;
   std::ifstream energyInStream;
   double nonDriveLoad;
   double totalCurrLimit;

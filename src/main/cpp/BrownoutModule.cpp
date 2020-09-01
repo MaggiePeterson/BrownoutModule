@@ -8,7 +8,7 @@ void BrownoutModule::periodicInit(){
     this->ErrorModulePipe = pipes[0];
 	this->DriveBaseModulePipe = pipes[1];
 
-    energyInStream.open(energyLog);
+    energyInStream.open(rawMatchFile);
     double tmpTime, tmpEnergy = 0;
      
     if(energyInStream.peek() == std::ifstream::traits_type::eof()){ //if is empty
@@ -21,7 +21,8 @@ void BrownoutModule::periodicInit(){
     energyInStream.close();
 
     myFile.open (fileName);
-    energyStream.open (energyLog);
+    currMatchStream.open(currMatchFile);
+    rawMatchStream.open (rawMatchFile);
 
     //fix this to tell matches apart -- real time match time data
     //ignore line until start of match time
@@ -63,8 +64,10 @@ void BrownoutModule::periodicRoutine(){
     }
 
     // add close somwhere hereeeee
+    //TODO: append curr match to raw data match
     if(frc::Timer().GetMatchTime() == 0){
-        energyStream.close();
+        rawMatchStream.close();
+        currMatchStream.close();
         myFile.close();
     }
 
@@ -86,7 +89,6 @@ void BrownoutModule::periodicRoutine(){
     std::vector<double> tmpTime;
     std::vector<double> tmpEnergy;
 
-    std::vector<std::vector<double>> allTimes;
     std::vector<std::vector<double>> allEnergy;
     double timer, matchTime = 0, energy;
 
@@ -94,7 +96,7 @@ void BrownoutModule::periodicRoutine(){
     double lastEnergy = 0;
 
     std::vector<double> timeInterval;
-    std::vector<double> avgEnergy;
+    std::vector<double> simplifiedMatch;
     //while can read file
     energyInStream >> timer;
     energyInStream >> lastTime;
@@ -125,27 +127,28 @@ void BrownoutModule::periodicRoutine(){
         if(tmpTime.back() == 0 ) {
 
             //averge into time ranges
-            double avgEn = 0, currTime = BrownoutModuleRunInterval/1000.0, lastTime = 0;
+            double avgEn = 0, upperBound = BrownoutModuleRunInterval/1000.0, lowerBound = 0;
 
-            avgEnergy.clear();
+            simplifiedMatch.clear();
             timeInterval.clear();
+            uint8_t i = 0;
 
-            for(int i = 0; i < tmpTime.size(); i++){
+            while(i < tmpTime.size()){
 
-                while(tmpTime[i] >= lastTime && tmpTime[i] <= currTime){ 
+                while(tmpTime[i] >= lowerBound && tmpTime[i] <= upperBound){ 
                     avgEn += tmpEnergy[i];
                     i++;
                 }
 
-                timeInterval.push_back(lastTime); //TODO make this only update once
-                avgEnergy.push_back(avgEn/BrownoutModuleRunInterval);
+                timeInterval.push_back(lowerBound); 
+                simplifiedMatch.push_back(avgEn/BrownoutModuleRunInterval);
 
-                lastTime = currTime;
-                currTime += BrownoutModuleRunInterval/1000.0;
+                lowerBound = upperBound;
+                upperBound += BrownoutModuleRunInterval/1000.0;
                 
             }
 
-            allEnergy.push_back(avgEnergy);
+            allEnergy.push_back(simplifiedMatch);
             
         }
 
@@ -157,27 +160,21 @@ void BrownoutModule::periodicRoutine(){
     timestamp = timeInterval; 
 
     double avgTime = 0, avgEnergyPoint = 0;
-    std::vector<double> smpTime;
-    std::vector<double> smpEnergy;
     
 
-    for(int i = 0; i < allEnergy.back().size(); i++){
-        for(int j = 0; j < allTimes.size(); j++){
+    for(uint8_t i = 0; i < allEnergy.back().size(); i++){
+        for(uint8_t j = 0; j < allEnergy.size(); j++){
             //average values with same time
             avgEnergyPoint += allEnergy[j][i];
             
         }
 
-        avgEnergyPoint /= allTimes.back().size();
-
-        //fix time vector
-        timestamp.push_back(avgTime);
+        avgEnergyPoint /= allEnergy.back().size();
         pastEnergy.push_back(avgEnergyPoint);
 
     }
 
-  }
-
+}
 
 /* writes data to csv file */
 bool BrownoutModule::writeData(std::string fileName){
@@ -258,7 +255,7 @@ bool BrownoutModule::checkEnergy(double time, double matchTime){
     if(stateRef->IsAutonomous())
         matchTime += TELEOP_LENGTH;
 
-    energyStream << time << ", "<< matchTime<< "," << pdp->GetTotalEnergy() << std::endl;
+    currMatchStream << time << ", "<< matchTime<< "," << pdp->GetTotalEnergy() << std::endl;
 
     //compare around the same time
     for(uint8_t i = 1; i < pastEnergy.size(); i++){
