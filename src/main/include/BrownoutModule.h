@@ -38,14 +38,21 @@ class BrownoutModule : public ModuleBase {
   const std::string rawMatchFile = "RawEnergy.csv";
   const std::string currMatchFile = "CurrentMatch.csv";
   const std::string avgMatchFile = "AverageMatch.csv";
+  const std::string rawPastMatch = "rawPastMatch.csv";
+  const std::string sumAllMatchesFile = "rawPastMatch.csv";
+
+
   std::ofstream myFile;
 
   std::ofstream rawMatchStream;
   std::ofstream currMatchStream;
   std::ifstream energyInStream;
+  std::fstream rawPastMatchStream;
+  std::fstream sumAllMatchesStream;
+
   double nonDriveLoad;
   double totalCurrLimit;
-  std::vector<double> timestamp;
+  std::vector<double> timeInterval;
   std::vector<double> pastEnergy;
   double xsum = 0.0, x2sum = 0.0, ysum = 0.0, xysum = 0.0; //calculating resistance
   void compilePastMatchData();

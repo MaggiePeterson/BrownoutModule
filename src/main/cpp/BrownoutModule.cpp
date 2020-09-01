@@ -23,6 +23,7 @@ void BrownoutModule::periodicInit(){
     myFile.open (fileName);
     currMatchStream.open(currMatchFile);
     rawMatchStream.open (rawMatchFile);
+    rawPastMatchStream.open(rawPastMatch);
 
     //fix this to tell matches apart -- real time match time data
     //ignore line until start of match time
@@ -73,106 +74,92 @@ void BrownoutModule::periodicRoutine(){
 
 }
 
-  void BrownoutModule::compilePastMatchData(){
+void BrownoutModule::compilePastMatchData(){
 
-      //use get match timer frctimer::getmatchtime
-      //throw away incomplete data
-      // send average match adn data points
-      // save average file, data from current game file, all raw data from previous games used to calc average
-      //close file from current match should go into new average file and appended to raw data file
+      //read in raw match data from the past match
+      double time, matchTime, energyRecord;
+      std::vector<double> timeStamp;
+      std::vector<double> energyInMatch;
 
-      /* match timer 0 take and sum then divide = avg energy at time = 0;
-      then decide rate this run = break up the match
-      take all data from 0 to 200 MS
-      average then together the range of the time */
+      while(rawPastMatchStream >> time){
 
-    std::vector<double> tmpTime;
-    std::vector<double> tmpEnergy;
+          rawPastMatchStream >> matchTime;
+         rawPastMatchStream >> energyRecord;
 
-    std::vector<std::vector<double>> allEnergy;
-    double timer, matchTime = 0, energy;
+         timeStamp.push_back(matchTime);
+         energyInMatch.push_back(energyRecord);
 
-    double lastTime = 0;
-    double lastEnergy = 0;
+      }
 
-    std::vector<double> timeInterval;
-    std::vector<double> simplifiedMatch;
-    //while can read file
-    energyInStream >> timer;
-    energyInStream >> lastTime;
-    energyInStream >> lastEnergy;
+    //clear
+      rawPastMatchStream.open(rawPastMatch, std::ofstream::out | std::ofstream::trunc);
 
-    while(energyInStream >> timer){
-        
-        tmpTime.push_back(lastTime);
-        tmpEnergy.push_back(lastEnergy);
+      //If match was completed (countdown reached 0)
+      
+      std::vector<double> avgEnergyInterval;
 
-        energyInStream >> matchTime;
-        energyInStream >> energy;
+      if(timeStamp.back() == 0 ) {
 
-        while(matchTime < MATCH_LENGTH){
-
-            tmpTime.push_back(matchTime);
-            tmpEnergy.push_back(energy);
-
-            energyInStream >> matchTime;
-            energyInStream >> energy;
-
-            lastTime = matchTime; //beginning of match time, add to next match start
-            lastEnergy = energy;
-
-        };
-
-        // only track completed matches
-        if(tmpTime.back() == 0 ) {
-
-            //averge into time ranges
-            double avgEn = 0, upperBound = BrownoutModuleRunInterval/1000.0, lowerBound = 0;
-
-            simplifiedMatch.clear();
-            timeInterval.clear();
+            //Average the energy for each time interval
+            double avgRange = 0, upperBound = BrownoutModuleRunInterval/1000.0, lowerBound = 0;
+            
             uint8_t i = 0;
+            int n = 0;
 
-            while(i < tmpTime.size()){
+            while(i < timeStamp.size()){
 
-                while(tmpTime[i] >= lowerBound && tmpTime[i] <= upperBound){ 
-                    avgEn += tmpEnergy[i];
+                while(timeStamp[i] >= lowerBound && timeStamp[i] <= upperBound){ 
+                    avgRange += energyInMatch[i];
                     i++;
+                    n++;
                 }
 
                 timeInterval.push_back(lowerBound); 
-                simplifiedMatch.push_back(avgEn/BrownoutModuleRunInterval);
+                avgEnergyInterval.push_back(avgRange/n);
 
                 lowerBound = upperBound;
                 upperBound += BrownoutModuleRunInterval/1000.0;
+                n = 0;
                 
             }
-
-            allEnergy.push_back(simplifiedMatch);
             
-        }
+     }
 
-        tmpTime.clear();
-        tmpEnergy.clear();
+    //read in all past match data
+     sumAllMatchesStream.open(sumAllMatchesFile);
 
-    }
+     int numOfMatches;
+     sumAllMatchesStream >> numOfMatches;
+     double energySum;
+     std::vector<double> allMatchesSum;
 
-    timestamp = timeInterval; 
+     while(sumAllMatchesStream >> energySum){
 
-    double avgTime = 0, avgEnergyPoint = 0;
+         allMatchesSum.push_back(energySum);
+
+     }
+
+    //get average points of all matches
+    double avg = 0;
+     for(uint8_t i = 0; i < avgEnergyInterval.size(); i++){
+
+         avg = double(avgEnergyInterval[i] + allMatchesSum[i])/numOfMatches;
+         pastEnergy.push_back(avg);
+         avg = 0;
+         allMatchesSum[i] += avgEnergyInterval[i];
+     }
+     numOfMatches++;
     
+    //clear file then rewrite
+    sumAllMatchesStream.open(sumAllMatchesFile, std::ofstream::out | std::ofstream::trunc);
 
-    for(uint8_t i = 0; i < allEnergy.back().size(); i++){
-        for(uint8_t j = 0; j < allEnergy.size(); j++){
-            //average values with same time
-            avgEnergyPoint += allEnergy[j][i];
-            
-        }
+     //write updated average match data to sum of all matches
+     for(int i =0; i < allMatchesSum.size(); i++){
+         sumAllMatchesStream >> allMatchesSum[i];
+     }
 
-        avgEnergyPoint /= allEnergy.back().size();
-        pastEnergy.push_back(avgEnergyPoint);
-
-    }
+     sumAllMatchesStream << numOfMatches;
+        
 
 }
 
@@ -256,10 +243,11 @@ bool BrownoutModule::checkEnergy(double time, double matchTime){
         matchTime += TELEOP_LENGTH;
 
     currMatchStream << time << ", "<< matchTime<< "," << pdp->GetTotalEnergy() << std::endl;
+    rawPastMatchStream << time << ", "<< matchTime<< "," << pdp->GetTotalEnergy() << std::endl;
 
     //compare around the same time
     for(uint8_t i = 1; i < pastEnergy.size(); i++){
-        if(timestamp.at(i - 1) <= time && time <= timestamp.at(i)){
+        if(timeInterval.at(i - 1) <= time && time <= timeInterval.at(i)){
             return (pdp->GetTotalEnergy() - pastEnergy.at(i) > ENERGY_THRESHOLD*pastEnergy.at(i));
         }
     }
