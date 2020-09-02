@@ -8,26 +8,19 @@ void BrownoutModule::periodicInit(){
     this->ErrorModulePipe = pipes[0];
 	this->DriveBaseModulePipe = pipes[1];
 
-    energyInStream.open(rawMatchFile);
+    lastMatchStream.open(lastMatchFile);
     double tmpTime, tmpEnergy = 0;
      
-    if(energyInStream.peek() == std::ifstream::traits_type::eof()){ //if is empty
+    if(lastMatchStream.peek() == std::ifstream::traits_type::eof()){ //if is empty
         fileEmpty = true;
     }
     else {
         compilePastMatchData();
     }
 
-    energyInStream.close();
-
-    myFile.open (fileName);
-    currMatchStream.open(currMatchFile);
-    rawMatchStream.open (rawMatchFile);
-    rawPastMatchStream.open(rawPastMatch);
-
-    //fix this to tell matches apart -- real time match time data
-    //ignore line until start of match time
-    //if match incojmpelte dischard
+    generalStream.open (generalFile);
+    lastMatchStream.open(lastMatchFile);
+    allMatchesStream.open (allMatchesFile);
 
 }
 
@@ -60,113 +53,104 @@ void BrownoutModule::periodicRoutine(){
         DriveBaseModulePipe->pushQueue(new Message("CURRENT", getDriveCurrentLimitScaling()));
     }
 
-    if(!(writeData(fileName))){
+    if(!(writeData(generalFile))){
         ErrorModulePipe->pushQueue(new Message("Failed to write Brownout data to file", LOW));
     }
 
-    // add close somwhere hereeeee
-    //TODO: append curr match to raw data match
+    //close files at end
     if(frc::Timer().GetMatchTime() == 0){
-        rawMatchStream.close();
-        currMatchStream.close();
-        myFile.close();
+        allMatchesStream.close();
+        generalStream.close();
+        lastMatchStream.close();
     }
 
 }
 
 void BrownoutModule::compilePastMatchData(){
 
-      //read in raw match data from the past match
-      double time, matchTime, energyRecord;
-      std::vector<double> timeStamp;
-      std::vector<double> energyInMatch;
+    //read in raw match data from the past match
+    double time, matchTime, energyRecord;
+    std::vector<double> timeStamp;
+    std::vector<double> energyInMatch;
 
-      while(rawPastMatchStream >> time){
+    while(lastMatchStream >> time){
 
-          rawPastMatchStream >> matchTime;
-         rawPastMatchStream >> energyRecord;
+        lastMatchStream >> matchTime;
+        lastMatchStream >> energyRecord;
 
-         timeStamp.push_back(matchTime);
-         energyInMatch.push_back(energyRecord);
+        timeStamp.push_back(matchTime);
+        energyInMatch.push_back(energyRecord);
 
-      }
+    }
 
     //clear
-      rawPastMatchStream.open(rawPastMatch, std::ofstream::out | std::ofstream::trunc);
+    lastMatchStream.open(lastMatchFile, std::ofstream::out | std::ofstream::trunc);
+ 
+    std::vector<double> avgEnergyInterval;
+    //If match was completed (countdown reached 0)
+    if(timeStamp.back() == 0 ) {
 
-      //If match was completed (countdown reached 0)
-      
-      std::vector<double> avgEnergyInterval;
+        //Average the energy for each time interval
+        double avgRange = 0, upperBound = BrownoutModuleRunInterval/1000.0, lowerBound = 0;
+        
+        uint8_t i = 0;
+        int n = 0;
 
-      if(timeStamp.back() == 0 ) {
+        while(i < timeStamp.size()){
 
-            //Average the energy for each time interval
-            double avgRange = 0, upperBound = BrownoutModuleRunInterval/1000.0, lowerBound = 0;
-            
-            uint8_t i = 0;
-            int n = 0;
-
-            while(i < timeStamp.size()){
-
-                while(timeStamp[i] >= lowerBound && timeStamp[i] <= upperBound){ 
-                    avgRange += energyInMatch[i];
-                    i++;
-                    n++;
-                }
-
-                timeInterval.push_back(lowerBound); 
-                avgEnergyInterval.push_back(avgRange/n);
-
-                lowerBound = upperBound;
-                upperBound += BrownoutModuleRunInterval/1000.0;
-                n = 0;
-                
+            while(timeStamp[i] >= lowerBound && timeStamp[i] <= upperBound){ 
+                avgRange += energyInMatch[i];
+                i++;
+                n++;
             }
+
+            timeInterval.push_back(lowerBound); 
+            avgEnergyInterval.push_back(avgRange/n);
+
+            lowerBound = upperBound;
+            upperBound += BrownoutModuleRunInterval/1000.0;
+            n = 0;
             
-     }
+        }
+        
+    }
 
     //read in all past match data
-     sumAllMatchesStream.open(sumAllMatchesFile);
+    sumAllMatchesStream.open(sumAllMatchesFile);
 
-     int numOfMatches;
-     sumAllMatchesStream >> numOfMatches;
-     double energySum;
-     std::vector<double> allMatchesSum;
+    int numOfMatches;
+    double energySum, avg = 0;
+    std::vector<double> allMatchesSum;
+    sumAllMatchesStream >> numOfMatches;
 
-     while(sumAllMatchesStream >> energySum){
+    // Get average of each point
+    for(uint8_t i = 0; i < avgEnergyInterval.size(); i++){
+        sumAllMatchesStream >> energySum;
+        avg = double(avgEnergyInterval[i] + energySum)/numOfMatches;
+        pastEnergy.push_back(avg);
+        avg = 0;
+        allMatchesSum[i] = avgEnergyInterval[i] + energySum;
+    }
+    numOfMatches++;
 
-         allMatchesSum.push_back(energySum);
-
-     }
-
-    //get average points of all matches
-    double avg = 0;
-     for(uint8_t i = 0; i < avgEnergyInterval.size(); i++){
-
-         avg = double(avgEnergyInterval[i] + allMatchesSum[i])/numOfMatches;
-         pastEnergy.push_back(avg);
-         avg = 0;
-         allMatchesSum[i] += avgEnergyInterval[i];
-     }
-     numOfMatches++;
-    
-    //clear file then rewrite
+    //clear file then update all match sums
     sumAllMatchesStream.open(sumAllMatchesFile, std::ofstream::out | std::ofstream::trunc);
 
-     //write updated average match data to sum of all matches
-     for(int i =0; i < allMatchesSum.size(); i++){
-         sumAllMatchesStream >> allMatchesSum[i];
-     }
+    //write updated match data to sum of all matches
+    for(int i =0; i < allMatchesSum.size(); i++){
+        sumAllMatchesStream >> allMatchesSum[i];
+    }
 
-     sumAllMatchesStream << numOfMatches;
+    sumAllMatchesStream << numOfMatches;
+
+    sumAllMatchesStream.close();
         
-
 }
 
 /* writes data to csv file */
 bool BrownoutModule::writeData(std::string fileName){
     
-    if (myFile <<  frc::Timer().GetFPGATimestamp() << ", " << pdp->GetTotalCurrent() << ", "<< pdp->GetVoltage() << ", " << getBatteryPower() << std::endl){
+    if (generalStream <<  frc::Timer().GetFPGATimestamp() << ", " << pdp->GetTotalCurrent() << ", "<< pdp->GetVoltage() << ", " << getBatteryPower() << std::endl){
         
         return true;
     }
@@ -236,15 +220,14 @@ bool BrownoutModule::isBrownout(){
 
 bool BrownoutModule::checkEnergy(double time, double matchTime){
 
-    if(fileEmpty) return false;
-
     //matchTime counts down for current period; add time to auto 
     if(stateRef->IsAutonomous())
         matchTime += TELEOP_LENGTH;
 
-    currMatchStream << time << ", "<< matchTime<< "," << pdp->GetTotalEnergy() << std::endl;
-    rawPastMatchStream << time << ", "<< matchTime<< "," << pdp->GetTotalEnergy() << std::endl;
+    allMatchesStream << time << ", "<< matchTime<< "," << pdp->GetTotalEnergy() << std::endl;
+    lastMatchStream << time << ", "<< matchTime<< "," << pdp->GetTotalEnergy() << std::endl;
 
+    if(fileEmpty) return false;
     //compare around the same time
     for(uint8_t i = 1; i < pastEnergy.size(); i++){
         if(timeInterval.at(i - 1) <= time && time <= timeInterval.at(i)){

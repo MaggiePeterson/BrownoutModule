@@ -34,29 +34,22 @@ class BrownoutModule : public ModuleBase {
   double batteryResistance = 0.0;
   bool hasRun = false;
   bool fileEmpty = true;
-  const std::string fileName = "BrownoutData.csv"; //change path
-  const std::string rawMatchFile = "RawEnergy.csv";
-  const std::string currMatchFile = "CurrentMatch.csv";
-  const std::string avgMatchFile = "AverageMatch.csv";
-  const std::string rawPastMatch = "rawPastMatch.csv";
-  const std::string sumAllMatchesFile = "rawPastMatch.csv";
-
-
-  std::ofstream myFile;
-
-  std::ofstream rawMatchStream;
-  std::ofstream currMatchStream;
-  std::ifstream energyInStream;
-  std::fstream rawPastMatchStream;
-  std::fstream sumAllMatchesStream;
-
   double nonDriveLoad;
   double totalCurrLimit;
   std::vector<double> timeInterval;
   std::vector<double> pastEnergy;
   double xsum = 0.0, x2sum = 0.0, ysum = 0.0, xysum = 0.0; //calculating resistance
-  void compilePastMatchData();
 
+  const std::string generalFile = "/home/lvuser/BrownoutData.csv"; 
+  const std::string lastMatchFile = "/home/lvuser/lastMatch.csv";
+  const std::string allMatchesFile = "/home/lvuser/allMatches.csv";
+  const std::string sumAllMatchesFile = "/home/lvuser/sumAllMatches.csv";
+  std::fstream generalStream;
+  std::fstream lastMatchStream;
+  std::fstream allMatchesStream;
+  std::fstream sumAllMatchesStream;
+  
+  void compilePastMatchData();
   bool writeData(std::string fileName);
   double getBatteryPower();
   bool willBrownOut();
