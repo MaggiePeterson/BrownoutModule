@@ -231,7 +231,7 @@ bool BrownoutModule::checkEnergy(double time, double matchTime){
     //compare around the same time
     for(uint8_t i = 1; i < pastEnergy.size(); i++){
         if(timeInterval.at(i - 1) <= time && time <= timeInterval.at(i)){
-            return (pdp->GetTotalEnergy() - pastEnergy.at(i) > ENERGY_THRESHOLD*pastEnergy.at(i));
+            return (abs(pdp->GetTotalEnergy() - pastEnergy.at(i)) > ENERGY_THRESHOLD*pastEnergy.at(i));
         }
     }
 
