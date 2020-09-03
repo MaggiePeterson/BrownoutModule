@@ -29,4 +29,4 @@ void ErrorModule::periodicRoutine() {
   if (!trace.empty()) frc::DriverStation::ReportError(trace);
 }
 
-std::vector<uint8_t> ErrorModule::getConstructorArgs() { return std::vector<uint8_t> {DriveBaseModuleID}; }
+std::vector<uint8_t> ErrorModule::getConstructorArgs() { return std::vector<uint8_t> {DriveBaseModuleID, BrownoutModuleID, UpdateMotorModuleID}; }

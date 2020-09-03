@@ -22,6 +22,7 @@ class GenericPipe {
 
   public:
   void pushQueue(Message*);
+  int size() {return _deque.size();}
   Message* popQueue();
 };
 

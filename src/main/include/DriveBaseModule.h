@@ -45,6 +45,7 @@ class DriveBaseModule : public ModuleBase {
   GenericPipe* ErrorModulePipe;
   GenericPipe* BrownoutModulePipe;
   GenericPipe* AutonomousModulePipe;
+  GenericPipe* UpdateMotorModulePipe;
 
   frc::Joystick* driverStick;
   frc::Joystick* operatorStick;
@@ -56,7 +57,9 @@ class DriveBaseModule : public ModuleBase {
   
   bool initDriveMotor(rev::CANSparkMax* motor, rev::CANSparkMax* follower, bool invert); //loads initial values into motors such as current limit and phase direction
   bool setPowerBudget(rev::CANSparkMax* motor, float iPeak, float iRated, int limitCycles); //changes the current limits on the motors 
-  
+  double getDriveVoltage();
+  bool setMotorSetpoints(double lVal, double rVal, rev::ControlType controlMode);
+
   public:
 
   std::vector<uint8_t> getConstructorArgs();

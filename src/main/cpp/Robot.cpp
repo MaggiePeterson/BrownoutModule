@@ -8,13 +8,44 @@
 #include "Robot.h"
 
 #include <iostream>
+#include <vector>
 
 #include <frc/smartdashboard/SmartDashboard.h>
+#include <frc/DriverStation.h>
+
+#include "Constructor.h"
+#include "ModuleBase.h"
+
+// All Module Includes
+#include "DriveBaseModule.h"
+#include "ErrorModule.h"
+#include "BrownoutModule.h"
+#include "UpdateMotorModule.h"
 
 void Robot::RobotInit() {
-  m_chooser.SetDefaultOption(kAutoNameDefault, kAutoNameDefault);
-  m_chooser.AddOption(kAutoNameCustom, kAutoNameCustom);
-  frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
+  /**
+   * There must be a fixed order for the modules for the constructor to work.
+   * Your module must respect this order, or it will cause web construction failures:
+   * (modules[positionInModuleVector])
+   * modules[0]: Error Reporting Module
+   * modules[1]: DriveBase Module
+   * modules[2]: Brownout Protection Module
+   * modules[3]: Autonomous Module
+   * modules[4]: Pneumatics Module
+   * modules[5]: Internet/Hardware Ethernet Module
+   * modules[6]: Shuffleboard Module
+   * modules[7]: Error Reporting File IO Thread
+   * Manipulators, Sensors, etc.: TBD
+   * See Error.h for relevant macros
+   */
+
+  if (!Constructor::constructThreadedRobot(std::vector<ModuleBase*> {new ErrorModule, new DriveBaseModule, new BrownoutModule, new UpdateMotorModule}, this)) { // Pass a reference of this object to all modules
+    frc::DriverStation::ReportError("[Constructor] Web Construction has failed; ensure it is acyclic and constructable");
+    return;
+  }
+  
+  frc::DriverStation::ReportError("[Constructor] Successfully Constructed Web, ModuleBase::init() has been called on all modules.");
+
 }
 
 /**
@@ -39,29 +70,22 @@ void Robot::RobotPeriodic() {}
  * make sure to add them to the chooser code above as well.
  */
 void Robot::AutonomousInit() {
-  m_autoSelected = m_chooser.GetSelected();
-  // m_autoSelected = SmartDashboard::GetString("Auto Selector",
-  //     kAutoNameDefault);
-  std::cout << "Auto selected: " << m_autoSelected << std::endl;
 
-  if (m_autoSelected == kAutoNameCustom) {
-    // Custom Auto goes here
-  } else {
-    // Default Auto goes here
-  }
+
 }
 
 void Robot::AutonomousPeriodic() {
-  if (m_autoSelected == kAutoNameCustom) {
-    // Custom Auto goes here
-  } else {
-    // Default Auto goes here
-  }
+    
 }
 
-void Robot::TeleopInit() {}
+void Robot::TeleopInit() {
+  
+}
 
-void Robot::TeleopPeriodic() {}
+void Robot::TeleopPeriodic() {
+ 
+ 
+}
 
 void Robot::TestPeriodic() {}
 

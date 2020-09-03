@@ -21,6 +21,14 @@ bool DriveBaseModule::setDriveCurrLimit(float iPeak, float iRated, int limitCycl
   return setlFront && setrFront && setlBack && setrBack; // Failure on false
 }
 
+bool DriveBaseModule::setMotorSetpoints(double lVal, double rVal, rev::ControlType controlMode) {
+	lMotor->GetEncoder().SetPosition(0);
+	rMotor->GetEncoder().SetPosition(0);
+	lMotor->GetPIDController().SetReference(lVal, controlMode);
+	rMotor->GetPIDController().SetReference(rVal, controlMode);
+	return rMotor->GetLastError() == rev::CANError::kOk && lMotor->GetLastError() == rev::CANError::kOk;
+}
+
 void DriveBaseModule::arcadeDrive(float vel, float dir) {
   // Convert joystick input into motor outputs in voltage mode
 
@@ -101,7 +109,42 @@ void DriveBaseModule::periodicRoutine() {
     arcadeDrive(driverStick->GetRawAxis(1), driverStick->GetRawAxis(4));
     return;
   }
+
+  if (stateRef->IsTest()) {
+    
+    //testing points of curr and volt to estimate battery resistance
+		Message* msg;
+    //get latest packet
+    while( BrownoutModulePipe->size() > 0 )
+            msg = BrownoutModulePipe->popQueue();
+		if (!msg) return;
+
+    BrownoutModulePipe->pushQueue(new Message("Forward Move", INFO));
+		ErrorModulePipe->pushQueue(new Message("Value: " + std::to_string(msg->val), INFO));
+
+    //set curret
+		if (!setMotorSetpoints(msg->val, msg->val, rev::ControlType::kCurrent)) BrownoutModulePipe->pushQueue(new Message("Failed to do test brownout motion!", HIGH));
+    return;
+	}
+
+  if(ErrorModulePipe->popQueue()->val == FATAL){
+    double scaling = UpdateMotorModulePipe->popQueue()->val;
+    setDriveCurrLimit(motorInitMaxCurrent, scaling*motorInitRatedCurrent, motorInitLimitCycles);
+
+  }
 	// Add rest of manipulator code...
 }
 
-std::vector<uint8_t> DriveBaseModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID}; }
+double DriveBaseModule::getDriveVoltage(){
+  
+  double rMotorV = rMotor->GetAppliedOutput() * rMotor->GetBusVoltage(); 
+  double lMotorV = lMotor->GetAppliedOutput() * lMotor->GetBusVoltage(); 
+  double rMotorFV = rMotorFollower->GetAppliedOutput() * rMotorFollower->GetBusVoltage(); 
+  double lMotorFV = lMotorFollower->GetAppliedOutput() * lMotorFollower->GetBusVoltage();
+
+  double totalDriveVoltage = rMotorV + lMotorV + rMotorFV + lMotorFV;
+  return totalDriveVoltage; 
+}
+ 
+
+std::vector<uint8_t> DriveBaseModule::getConstructorArgs() { return std::vector<uint8_t> {ErrorModuleID, BrownoutModuleID, UpdateMotorModuleID}; }
